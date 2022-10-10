@@ -11,8 +11,7 @@ if (window.WebSocket === undefined)
            LISTENER_ATTR = NAMESPACE + '-on',
         TRIGGER_SELECTOR = '[data-' + TRIGGER_ATTR + ']';
 
-    var properties = queryStringToObject(getQueryString(), true),
-         websocket = null;
+    var websocket = null;
 
     function init() {
         websocket = new WebSocket(properties.uri);
@@ -36,26 +35,32 @@ if (window.WebSocket === undefined)
         });
     }
 
-    function websocketSend() {
+    function websocketSend(eventName, eventData = null) {
         var $el   = $(this),
             $form = $el.closest('form'),
-            data  = queryStringToObject($form.serialize()),
-            eventName = $el.data(TRIGGER_ATTR);
+            data  = $el.data(NAMESPACE + '-data'),
+            eventName = eventName;
 
-        var event = {
-            name: eventName,
-            payload: data
-        };
-
+        if (eventData) {
+            var event = {
+                name: eventName,
+                payload: eventData
+            };
+        } else {
+            var event = {
+                name: eventName,
+                payload: data
+            };
+        }
         websocket.send(JSON.stringify(event));
     }
 
-    $.fn.websocketSend = websocketSend;
+    function readyState() {
+        return websocket.readyState
+    }
 
-    $(document).on('submit', TRIGGER_SELECTOR, function (event) {
-        $(this).websocketSend();
-        event.preventDefault();
-    });
+    $.fn.readyState = readyState;
+    $.fn.websocketSend = websocketSend;
 
     function queryStringToObject(queryString, decode) {
         var query = queryString.split('&'),
